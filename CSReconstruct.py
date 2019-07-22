@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import scipy.fftpack as fftpack
 from BasisPursuit import basis_pursuit
 
+import cvxpy as cvx
+
 
 
 #编码矩阵生成
@@ -61,11 +63,11 @@ def construct_haar_dwt_matrix(width_of_matrix):
 
 def main():
 
-    img = cv2.imread("img/sample_256pixel.bmp",0)
+    img = cv2.imread("img/sample_1024pixel.bmp",0)
     print("img shape" , img.shape)
     height, width = img.shape[:2]
 
-    cs_rate = 0.25
+    cs_rate = 0.2
     n = height*width
     m = int(cs_rate * n)
 
@@ -74,6 +76,7 @@ def main():
     
     #img_array (h,w)→(h*w,1) (36,1)
     img_array = img.reshape(height*width ,1)
+    print(np.max(img_array))
     
     #编码矩阵Phi (h^2,w^2) (36,36)
     phi = (np.sign(np.random.rand(m,n)-0.5)+np.ones((m,n)))/2
@@ -83,11 +86,11 @@ def main():
     y = np.dot(phi,img_array)
 
     # wavelet method
-    psi = construct_haar_dwt_matrix(n) # wavelet transformation matrix
-    theta = np.dot(phi,psi) # wavelet
+    #psi = construct_haar_dwt_matrix(n) # wavelet transformation matrix
+    #theta = np.dot(phi,psi) # wavelet
     
     # dct method
-    '''theta = []
+    theta = []
     for i in range(n):
         ek = np.zeros((1,n))
         ek[0,i] = 1
@@ -95,7 +98,7 @@ def main():
         #print('phi',phi.shape,'psi',psi.shape)
         theta_i_col = np.dot(phi,psi)
         theta.append(theta_i_col)
-    theta = np.array(theta).reshape((n,m)).T'''
+    theta = np.array(theta).reshape((n,m)).T
     
     
     #print(encoded.shape)
@@ -107,11 +110,20 @@ def main():
     #alpha = np.dot(theta_inv,y)
 
 
-    # Basis pursuit method
-    A = theta
-    alpha = basis_pursuit(A,y)
+    # Basis pursuit method with cvxopt
+    #A = theta
+    #alpha = basis_pursuit(A,y)
 
-    print(alpha.shape)
+    # basis pursuit with cvxpy
+    A = theta
+    x = cvx.Variable(n)
+    obj = cvx.Minimize(cvx.norm(x,1))
+    y = y.reshape((y.shape[0],))
+    const = [A * x == y]
+    prob = cvx.Problem(obj,const)
+    prob.solve()
+    alpha = x.value
+    alpha = alpha.reshape((alpha.shape[0],1))
 
 
     reconstruct = np.zeros((n,1))
@@ -120,7 +132,12 @@ def main():
         ek[0,i] = 1
         psi = fftpack.idct(ek).T
         reconstruct = reconstruct + np.dot(psi,alpha[i,0])
-
+    mask1 = reconstruct > 255
+    mask2 = reconstruct < 0
+    reconstruct = reconstruct-mask1*(reconstruct-255)-reconstruct*mask2
+    reconstruct = reconstruct.astype(np.uint8)
+    
+    
     #theta = np.array(theta).reshape((n,m)).T
     #reconstruct = np.dot(psi, alpha)
     reimg = reconstruct.reshape(height,width).astype("uint8")
