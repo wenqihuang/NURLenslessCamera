@@ -137,12 +137,17 @@ def main():
     reconstruct = reconstruct-mask1*(reconstruct-255)-reconstruct*mask2
     reconstruct = reconstruct.astype(np.uint8)
     
+    error = RMSE(img_array, reconstruct)
+    print("RMSE:", error)
+
 
     #theta = np.array(theta).reshape((n,m)).T
     #reconstruct = np.dot(psi, alpha)
     reimg = reconstruct.reshape(height,width).astype("uint8")
     cv2.imshow("reconstruct img", reimg)
     cv2.waitKey(0)
+
+    
         
 """     errors = []
     for i in range(height*width):
