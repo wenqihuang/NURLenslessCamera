@@ -21,8 +21,8 @@ def basis_pursuit(A,y):
     A = matrix(A)
     y = matrix(y)
 
-    print(A.size)
-    print(y.size)
+    #print(A.size)
+    #print(y.size)
 
     m, n = A.size
     r = matrix(0.0, (m,1))
@@ -159,112 +159,5 @@ def basis_pursuit(A,y):
 
     x = solvers.coneqp(P, q, G, h, kktsolver = Fkkt)['x'][:n]
 
-    I = [ k for k in range(n) if abs(x[k]) > 1e-2 ]
-    xls = +y
-    lapack.gels(A[:,I], xls)
-    ybp = A[:,I]*xls[:len(I)]
-
-    print("Sparse basis contains %d basis functions." %len(I))
-    print("Relative RMS error = %.1e." %(blas.nrm2(ybp-y) / blas.nrm2(y)))
-
-
-    """ pylab.figure(2, facecolor='w')
-    pylab.subplot(211)
-    pylab.plot(ts, y, '-', ts, ybp, 'r--')
-    pylab.xlabel('t')
-    pylab.ylabel('y(t), yhat(t)')
-    pylab.axis([0, 1, -1.5, 1.5])
-    pylab.title('Signal and basis pursuit approximation (fig. 6.22)')
-    pylab.subplot(212)
-    pylab.plot(ts, y-ybp, '-')
-    pylab.xlabel('t')
-    pylab.ylabel('y(t)-yhat(t)')
-    pylab.axis([0, 1, -0.05, 0.05])
-            
-    pylab.figure(3, facecolor='w')
-    pylab.subplot(211)
-    pylab.plot(ts, y, '-')
-    pylab.xlabel('t')
-    pylab.ylabel('y(t)')
-    pylab.axis([0, 1, -1.5, 1.5])
-    pylab.title('Signal and time-frequency plot (fig. 6.23)')
-    pylab.subplot(212)
-    omegas, taus = [], []
-    for i in I:
-        if i < K: 
-            omegas += [0.0]
-            taus += [i*tau]
-        else:
-            l = (i-K)/(2*K)+1
-            k = ((i-K)%(2*K)) %K
-            omegas += [l*omega0]
-            taus += [k*tau]
-    pylab.plot(ts, 150*abs(cos(5.0*ts)), '-', taus, omegas, 'ro')
-    pylab.xlabel('t')
-    pylab.ylabel('omega(t)')
-    pylab.axis([0, 1, -5, 155])
-    pylab.show() """
-
     x = array(x)
     return x
-
-
-def main():
-    # Basis functions are Gabor pulses:  for k = 0,...,K-1,
-    #
-    #     exp(-(t - k * tau)^2/sigma^2 ) * cos (l*omega0*t),  l = 0,...,L
-    #     exp(-(t - k * tau)^2/sigma^2 ) * sin (l*omega0*t),  l = 1,...,L
-
-    sigma = 0.05 
-    tau = 0.002    
-    omega0 = 5.0
-    K = 501
-    L = 30  
-    N = 501       # number of samples of each signal in [0,1] 
-
-    # Build dictionary matrix
-    ts = (1.0/N) * matrix(range(N), tc='d')
-    B = ts[:, K*[0]] - tau * matrix(range(K), (1,K), 'd')[N*[0],:]
-    B = exp(-(B/sigma)**2)
-    A = matrix(0.0, (N, K*(2*L+1)))
-
-    # First K columns are DC pulses for k = 0,...,K-1
-    A[:,:K] = B
-    for l in range(L):
-
-        # Cosine pulses for omega = (l+1)*omega0 and k = 0,...,K-1.
-        A[:, K+l*(2*K) : K+l*(2*K)+K] = mul(B, cos((l+1)*omega0*ts)[:, K*[0]])
-
-        # Sine pulses for omega = (l+1)*omega0 and k = 0,...,K-1.
-        A[:, K+l*(2*K)+K : K+(l+1)*(2*K)] = \
-            mul(B, sin((l+1)*omega0*ts)[:,K*[0]])
-
-
-
-    pylab.figure(1, facecolor='w')
-    pylab.subplot(311)
-    # DC pulse for k = 250 (tau = 0.5)
-    pylab.plot(ts, A[:,250])
-    pylab.ylabel('f(0.5, 0, c)')
-    pylab.axis([0, 1, -1, 1])
-    pylab.title('Three basis elements (fig. 6.21)')
-    # Cosine pulse for k = 250 (tau = 0.5) and l = 15  (omega = 75)
-    pylab.subplot(312)
-    pylab.ylabel('f(0.5, 75, c)')
-    pylab.plot(ts, A[:, K + 14*(2*K) + 250])
-    pylab.axis([0, 1, -1, 1])
-    pylab.subplot(313)
-    # Cosine pulse for k = 250 (tau = 0.5) and l = 30  (omega = 150)
-    pylab.plot(ts, A[:, K + 29*(2*K) + 250])
-    pylab.ylabel('f(0.5, 150, c)')
-    pylab.axis([0, 1, -1, 1])
-    pylab.xlabel('t')
-        
-    # Signal.
-    y = mul( 1.0 + 0.5 * sin(11*ts), sin(30 * sin(5*ts)))
-
-
-    basis_pursuit(A,y)
-
-if __name__ == "__main__":
-    main()

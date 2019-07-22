@@ -67,7 +67,7 @@ def main():
     print("img shape" , img.shape)
     height, width = img.shape[:2]
 
-    cs_rate = 0.2
+    cs_rate = 0.5
     n = height*width
     m = int(cs_rate * n)
 
@@ -111,11 +111,11 @@ def main():
 
 
     # Basis pursuit method with cvxopt
-    #A = theta
-    #alpha = basis_pursuit(A,y)
+    A = theta
+    alpha = basis_pursuit(A,y)
 
     # basis pursuit with cvxpy
-    A = theta
+    '''A = theta
     x = cvx.Variable(n)
     obj = cvx.Minimize(cvx.norm(x,1))
     y = y.reshape((y.shape[0],))
@@ -123,7 +123,7 @@ def main():
     prob = cvx.Problem(obj,const)
     prob.solve()
     alpha = x.value
-    alpha = alpha.reshape((alpha.shape[0],1))
+    alpha = alpha.reshape((alpha.shape[0],1))'''
 
 
     reconstruct = np.zeros((n,1))
@@ -137,7 +137,7 @@ def main():
     reconstruct = reconstruct-mask1*(reconstruct-255)-reconstruct*mask2
     reconstruct = reconstruct.astype(np.uint8)
     
-    
+
     #theta = np.array(theta).reshape((n,m)).T
     #reconstruct = np.dot(psi, alpha)
     reimg = reconstruct.reshape(height,width).astype("uint8")
