@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Jan  9 00:12:36 2019
-
-@author: ohman
-"""
 
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.fftpack as fftpack
+from BasisPursuit import basis_pursuit
 
 
 
@@ -62,13 +58,14 @@ def construct_haar_dwt_matrix(width_of_matrix):
 
     return H
 
+
 def main():
 
     img = cv2.imread("img/sample_256pixel.bmp",0)
     print("img shape" , img.shape)
     height, width = img.shape[:2]
 
-    cs_rate = 1
+    cs_rate = 0.25
     n = height*width
     m = int(cs_rate * n)
 
@@ -85,25 +82,37 @@ def main():
 
     y = np.dot(phi,img_array)
 
+    # wavelet method
     psi = construct_haar_dwt_matrix(n) # wavelet transformation matrix
-    #theta = np.dot(phi,psi) # wavelet
-    theta = []
+    theta = np.dot(phi,psi) # wavelet
+    
+    # dct method
+    '''theta = []
     for i in range(n):
         ek = np.zeros((1,n))
         ek[0,i] = 1
         psi = fftpack.idct(ek).T
-        print('phi',phi.shape,'psi',psi.shape)
+        #print('phi',phi.shape,'psi',psi.shape)
         theta_i_col = np.dot(phi,psi)
         theta.append(theta_i_col)
-
-    theta = np.array(theta).reshape((n,m)).T
+    theta = np.array(theta).reshape((n,m)).T'''
     
     
     #print(encoded.shape)
     #cv2.imshow("encoded", encoded)
     
-    theta_inv = np.linalg.pinv(theta)
-    alpha = np.dot(theta_inv,y)
+
+    # lse method 
+    #theta_inv = np.linalg.pinv(theta)
+    #alpha = np.dot(theta_inv,y)
+
+
+    # Basis pursuit method
+    A = theta
+    alpha = basis_pursuit(A,y)
+
+    print(alpha.shape)
+
 
     reconstruct = np.zeros((n,1))
     for i in range(n):
