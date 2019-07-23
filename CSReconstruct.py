@@ -8,6 +8,8 @@ from BasisPursuit import basis_pursuit
 
 import cvxpy as cvx
 
+import sys
+
 
 
 #编码矩阵生成
@@ -45,6 +47,7 @@ def construct_haar_dwt_matrix(width_of_matrix):
     ensure that H_n^T*H_n=I, where I is identity matrix. Haar wavelets are the
     rows of H_n.
     '''
+
     level = np.log2(width_of_matrix)
     if 2**level<width_of_matrix:
         print('please ensure the value of input parameter is the power of 2')
@@ -64,33 +67,42 @@ def construct_haar_dwt_matrix(width_of_matrix):
 def main():
 
     img = cv2.imread("img/sample_1024pixel.bmp",0)
+    img = cv2.imread("img/test.jpeg",0)
+    img = cv2.resize(img,(128,128))
     print("img shape" , img.shape)
     height, width = img.shape[:2]
 
-    cs_rate = 0.5
+    cs_rate = 0.3
     n = height*width
     m = int(cs_rate * n)
 
-    cv2.imshow("img", img)
-    cv2.waitKey(0)
+    #cv2.imshow("img", img)
+    #cv2.waitKey(0)
     
+    print(sys._getframe().f_lineno)
+
     #img_array (h,w)→(h*w,1) (36,1)
     img_array = img.reshape(height*width ,1)
-    print(np.max(img_array))
     
+
+    print(sys._getframe().f_lineno)
+
+
     #编码矩阵Phi (h^2,w^2) (36,36)
     phi = (np.sign(np.random.rand(m,n)-0.5)+np.ones((m,n)))/2
-    cv2.imshow("phi",phi)
-    cv2.waitKey(0)
+    #cv2.imshow("phi",phi)
+    #cv2.waitKey(0)
 
     y = np.dot(phi,img_array)
 
     # wavelet method
     #psi = construct_haar_dwt_matrix(n) # wavelet transformation matrix
     #theta = np.dot(phi,psi) # wavelet
-    
+
+    print(sys._getframe().f_lineno)
+
     # dct method
-    theta = []
+    '''theta = []
     for i in range(n):
         ek = np.zeros((1,n))
         ek[0,i] = 1
@@ -98,8 +110,20 @@ def main():
         #print('phi',phi.shape,'psi',psi.shape)
         theta_i_col = np.dot(phi,psi)
         theta.append(theta_i_col)
-    theta = np.array(theta).reshape((n,m)).T
+    theta = np.array(theta).reshape((n,m)).T'''
     
+    # dct method faster
+    psi = np.zeros((n,n))
+    for i in range(n):
+        ek = np.zeros((1,n))
+        ek[0,i] = 1
+        psi[:,i] = fftpack.idct(ek).T.reshape((n,))
+        #print('phi',phi.shape,'psi',psi.shape)
+    theta = np.dot(phi,psi)
+
+
+
+    print(sys._getframe().f_lineno)
     
     #print(encoded.shape)
     #cv2.imshow("encoded", encoded)
@@ -114,6 +138,7 @@ def main():
     A = theta
     alpha = basis_pursuit(A,y)
 
+
     # basis pursuit with cvxpy
     '''A = theta
     x = cvx.Variable(n)
@@ -125,6 +150,8 @@ def main():
     alpha = x.value
     alpha = alpha.reshape((alpha.shape[0],1))'''
 
+    
+    print(sys._getframe().f_lineno)
 
     reconstruct = np.zeros((n,1))
     for i in range(n):
