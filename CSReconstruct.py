@@ -72,7 +72,7 @@ def main():
     print("img shape" , img.shape)
     height, width = img.shape[:2]
 
-    cs_rate = 0.3
+    cs_rate = 0.4
     n = height*width
     m = int(cs_rate * n)
 
@@ -113,14 +113,20 @@ def main():
     theta = np.array(theta).reshape((n,m)).T'''
     
     # dct method faster
-    psi = np.zeros((n,n))
+    '''psi = np.zeros((n,n))
     for i in range(n):
         ek = np.zeros((1,n))
         ek[0,i] = 1
         psi[:,i] = fftpack.idct(ek).T.reshape((n,))
         #print('phi',phi.shape,'psi',psi.shape)
-    theta = np.dot(phi,psi)
+    '''
 
+    # load pre-caled dct matrix
+    psi = np.load("./pre_calculation/psi_"+str(height)+"_"+str(cs_rate)+".npy")
+    
+    
+    
+    theta = np.dot(phi,psi)
 
 
     print(sys._getframe().f_lineno)
