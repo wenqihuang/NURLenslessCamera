@@ -64,42 +64,15 @@ def construct_haar_dwt_matrix(width_of_matrix):
     return H
 
 
-def main():
+def cs_reconstruct(y,phi,height,width,cs_rate):
 
-    img = cv2.imread("img/sample_1024pixel.bmp",0)
-    img = cv2.imread("img/test.jpeg",0)
-    img = cv2.resize(img,(128,128))
-    print("img shape" , img.shape)
-    height, width = img.shape[:2]
-
-    cs_rate = 0.4
-    n = height*width
-    m = int(cs_rate * n)
-
-    #cv2.imshow("img", img)
-    #cv2.waitKey(0)
-    
-    print(sys._getframe().f_lineno)
-
-    #img_array (h,w)→(h*w,1) (36,1)
-    img_array = img.reshape(height*width ,1)
-    
-
-    print(sys._getframe().f_lineno)
-
-
-    #编码矩阵Phi (h^2,w^2) (36,36)
-    phi = (np.sign(np.random.rand(m,n)-0.5)+np.ones((m,n)))/2
-    #cv2.imshow("phi",phi)
-    #cv2.waitKey(0)
-
-    y = np.dot(phi,img_array)
+    n = height * width
 
     # wavelet method
     #psi = construct_haar_dwt_matrix(n) # wavelet transformation matrix
     #theta = np.dot(phi,psi) # wavelet
 
-    print(sys._getframe().f_lineno)
+    #print(sys._getframe().f_lineno)
 
     # dct method
     '''theta = []
@@ -113,16 +86,26 @@ def main():
     theta = np.array(theta).reshape((n,m)).T'''
     
     # dct method faster
-    '''psi = np.zeros((n,n))
+    psi = np.zeros((n,n))
     for i in range(n):
         ek = np.zeros((1,n))
         ek[0,i] = 1
         psi[:,i] = fftpack.idct(ek).T.reshape((n,))
         #print('phi',phi.shape,'psi',psi.shape)
-    '''
+    
 
     # load pre-caled dct matrix
-    psi = np.load("./pre_calculation/psi_"+str(height)+"_"+str(cs_rate)+".npy")
+    try:
+        psi = np.load("./pre_calculation/psi_"+str(height)+"_"+str(cs_rate)+".npy")
+    except FileNotFoundError:
+        # dct method faster
+        psi = np.zeros((n,n))
+        for i in range(n):
+            ek = np.zeros((1,n))
+            ek[0,i] = 1
+            psi[:,i] = fftpack.idct(ek).T.reshape((n,))
+            #print('phi',phi.shape,'psi',psi.shape)
+        np.save("./pre_calculation/psi_"+str(np.int(np.sqrt(n)))+"_"+str(cs_rate)+".npy", psi)
     
     
     
@@ -170,15 +153,17 @@ def main():
     reconstruct = reconstruct-mask1*(reconstruct-255)-reconstruct*mask2
     reconstruct = reconstruct.astype(np.uint8)
     
-    error = RMSE(img_array, reconstruct)
-    print("RMSE:", error)
+    #error = RMSE(img_array, reconstruct)
+    #print("RMSE:", error)
 
 
     #theta = np.array(theta).reshape((n,m)).T
     #reconstruct = np.dot(psi, alpha)
     reimg = reconstruct.reshape(height,width).astype("uint8")
-    cv2.imshow("reconstruct img", reimg)
-    cv2.waitKey(0)
+    print(reimg.shape)
+    #cv2.imshow("reconstruct img", reimg)
+    #cv2.waitKey(0)
+    return reimg
 
     
         
@@ -217,8 +202,8 @@ def main():
     plt.show() """
 
 
-if __name__ == "__main__":
-    main()
+
+
 """     img = np.random.randn(8,1)
     H = construct_haar_dwt_matrix(8)
 
