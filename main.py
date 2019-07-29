@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     
 
-    cs_rate = 1
+    cs_rate = 0.6
     n_high = height_high*width_high
     n_roi = height_roi * width_roi
     m_high = int(cs_rate * n_roi)
