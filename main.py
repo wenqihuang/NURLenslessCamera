@@ -102,7 +102,8 @@ if __name__ == "__main__":
     (height_fine, width_fine) = (180, 240)
     img_hi = cv2.resize(img, (width_fine, height_fine))
     img_lo = cv2.resize(img, (width_coarse, height_coarse))
-    #print(img_hi.shape)
+    print(img_hi.shape)
+    
 
     #(x,y,x,y)
     roi_bbox = np.array((int(0.33*height_fine), int(0.33*width_fine),\
@@ -166,7 +167,8 @@ if __name__ == "__main__":
     print("Begin reconstruct low-resolution image.")
     reimg_low = cs_reconstruct(y_coarse,phi_coarse,height_coarse,width_coarse,cs_rate)
     print("low-resolution reconstruction finished.")
-    reimg = cv2.resize(reimg_low, (height_fine,width_fine), interpolation=cv2.INTER_NEAREST)
+    # notice that opencv has an inversed x-y axis
+    reimg = cv2.resize(reimg_low, (width_fine,height_fine), interpolation=cv2.INTER_NEAREST)
     reimg[roi_bbox[0]:roi_bbox[2],roi_bbox[1]:roi_bbox[3]] = reimg_roi
     
     
