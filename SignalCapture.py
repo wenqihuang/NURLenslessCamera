@@ -5,6 +5,8 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QPushButton, QHBoxLayo
 from PyQt5.QtCore import Qt
 import numpy as np
 import sys
+import serial
+import serial.tools.list_ports
 
 
 class LcdDisplayWindow(QWidget):
@@ -52,5 +54,29 @@ class LcdDisplayWindow(QWidget):
         img_qpixmap = img_qpixmap.scaled(self.lb.width(),self.lb.height())
         self.lb.setPixmap(img_qpixmap)
 
-app = QtWidgets.QApplication(sys.argv)
-a = LcdDisplayWindow()
+
+def GetSensorData():
+    portx="/dev/cu.usbserial-1440"
+    bps=9600
+    timex=5
+    ser=serial.Serial(portx,bps,timeout=timex)
+    
+    while True:
+        try:
+            data=ser.readline().decode('ascii')[:-6]
+            data = int(data)
+            break
+        except ValueError:
+            continue
+        
+    ser.close()
+    return data
+
+
+
+
+if __name__ == "__main__":
+    #app = QtWidgets.QApplication(sys.argv)
+    #a = LcdDisplayWindow()
+    while True:
+        print(GetSensorData())
