@@ -3,11 +3,15 @@
 import cv2
 import numpy as np
 from CSReconstruct import cs_reconstruct
+from PyQt5 import QtWidgets
+from SignalCapture import LcdDisplayWindow, GetSensorData
+import sys
+import time 
 
 if __name__ == "__main__":
 
     '''
-    ### simulation
+    ### simulation old version
     img = cv2.imread("img/sample_1024pixel.bmp",0)
     img = cv2.imread("img/test.jpeg",0)
     img = cv2.imread("img/timg2.jpeg",0)
@@ -88,10 +92,20 @@ if __name__ == "__main__":
     #print(np.max(phi_roi))
     #cv2.imwrite("phi_roi.jpg", phi_roi*255)
     #cv2.waitKey(0)
+
+    print("Begin reconstruct ROI with high resolution.")
+    reimg_roi = cs_reconstruct(y_high,phi_roi,height_roi,width_roi,cs_rate)
+    print("ROI reconstruction finished.")
+    print("Begin reconstruct low-resolution image.")
+    reimg_low = cs_reconstruct(y_low,phi_low,height_low,width_low,cs_rate)
+    print("low-resolution reconstruction finished.")
+    reimg = cv2.resize(reimg_low, (height_high,width_high), interpolation=cv2.INTER_NEAREST)
+    reimg[roi_u:roi_d,roi_l:roi_r] = reimg_roi
     '''
     ##################
 
-    
+    '''
+    # simulation
     img = cv2.imread("img/sample_1024pixel.bmp",0)
     img = cv2.imread("img/test.jpeg",0)
     img = cv2.imread("img/timg2.jpeg",0)
@@ -103,8 +117,11 @@ if __name__ == "__main__":
     img_hi = cv2.resize(img, (width_fine, height_fine))
     img_lo = cv2.resize(img, (width_coarse, height_coarse))
     print(img_hi.shape)
-    
+    '''
 
+    cs_rate = 1
+    (height_coarse, width_coarse) = (30, 40)
+    (height_fine, width_fine) = (30, 40)
     #(x,y,x,y)
     roi_bbox = np.array((int(0.33*height_fine), int(0.33*width_fine),\
         int(0.66*height_fine), int(0.66*width_fine)))
@@ -140,7 +157,7 @@ if __name__ == "__main__":
         tmp = phi_fine[i,:].reshape((height_roi,width_roi))
         masks_fine[roi_bbox[0]:roi_bbox[2],roi_bbox[1]:roi_bbox[3],i] = tmp
         
-    
+    '''
     #sample simulation
     y_coarse = np.zeros((m_coarse,1))
     y_fine = np.zeros((m_fine,1))
@@ -149,18 +166,33 @@ if __name__ == "__main__":
     
     for i in range(m_fine):
         y_fine[i,0] = (masks_fine[:,:,i] * img_hi).sum()
+    '''
 
-    '''
-    print(m_high,n_high)
-    print(m_fine,n_fine_full)
-    print(y_fine.shape,phi_fine.shape,height_roi,width_roi)
-    print(y_high.shape,phi_roi.shape,height_roi,width_roi)
-    print(np.max(y_fine),np.max(y_coarse))
-    print(np.max(y_high),np.max(y_low))
-    print(np.max(masks_coarse), np.max(masks_fine))
-    print(height_roi,width_roi)
+    # sample in real world
+    app = QtWidgets.QApplication(sys.argv)
+    a = LcdDisplayWindow()
+    y_coarse = np.zeros((m_coarse,1))
+    y_fine = np.zeros((m_fine,1))
+
+    a.setimage(masks_coarse[:,:,0].reshape((height_coarse,width_coarse)))
+    #cv2.imshow("mask",masks_coarse[:,:,0].reshape((height_coarse,width_coarse)))
+    #cv2.waitKey(0)
     
-    '''
+    for i in range(m_coarse):
+        a.setimage(masks_coarse[:,:,i].reshape((height_coarse,width_coarse)))
+        time.sleep(1)
+        y_coarse[i,0] = GetSensorData()
+        print("y_coarse ", i, ": ", y_coarse[i,0])
+    
+    for i in range(m_fine):
+        a.setimage(masks_fine[:,:,i].reshape((height_fine,width_fine)))
+        time.sleep(1)
+        y_fine[i,0] = GetSensorData()
+        print("y_fine ", i, ": ", y_fine[i,0])
+
+    np.save("./y_coarse.npy", y_coarse)
+    np.save("./y_fine.npy", y_fine)
+
     print("Begin reconstruct ROI with high resolution.")
     reimg_roi = cs_reconstruct(y_fine,phi_fine,height_roi,width_roi,cs_rate)
     print("ROI reconstruction finished.")
@@ -172,20 +204,11 @@ if __name__ == "__main__":
     reimg[roi_bbox[0]:roi_bbox[2],roi_bbox[1]:roi_bbox[3]] = reimg_roi
     
     
+    np.save('./reimg.npy',reimg)
     
-    '''
-    print("Begin reconstruct ROI with high resolution.")
-    reimg_roi = cs_reconstruct(y_high,phi_roi,height_roi,width_roi,cs_rate)
-    print("ROI reconstruction finished.")
-    print("Begin reconstruct low-resolution image.")
-    reimg_low = cs_reconstruct(y_low,phi_low,height_low,width_low,cs_rate)
-    print("low-resolution reconstruction finished.")
-    reimg = cv2.resize(reimg_low, (height_high,width_high), interpolation=cv2.INTER_NEAREST)
-    reimg[roi_u:roi_d,roi_l:roi_r] = reimg_roi
-    '''
 
     
-    cv2.imshow("origin image",img)
+    #cv2.imshow("origin image",img)
 
     cv2.imshow("NUR reconstruct image",reimg)
     cv2.waitKey(0)
