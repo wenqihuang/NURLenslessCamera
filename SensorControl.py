@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-
+# THIS FILE IS FOR RESPBERRY PI TO CONTROL SENSOR AND SEND DATA TO MAC
 import smbus
 import time
 import serial

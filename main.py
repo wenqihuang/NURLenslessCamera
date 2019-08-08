@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from CSReconstruct import cs_reconstruct
 from PyQt5 import QtWidgets
-from SignalCapture import LcdDisplayWindow, GetSensorData
+from SignalCapture import LCDControl, GetSensorData, initSensorCommunication
 import sys
 import time 
 
@@ -119,8 +119,10 @@ if __name__ == "__main__":
     print(img_hi.shape)
     '''
 
+    # real world
+    
     cs_rate = 1
-    (height_coarse, width_coarse) = (30, 40)
+    (height_coarse, width_coarse) = (90, 120)
     (height_fine, width_fine) = (30, 40)
     #(x,y,x,y)
     roi_bbox = np.array((int(0.33*height_fine), int(0.33*width_fine),\
@@ -157,6 +159,7 @@ if __name__ == "__main__":
         tmp = phi_fine[i,:].reshape((height_roi,width_roi))
         masks_fine[roi_bbox[0]:roi_bbox[2],roi_bbox[1]:roi_bbox[3],i] = tmp
         
+    
     '''
     #sample simulation
     y_coarse = np.zeros((m_coarse,1))
@@ -170,39 +173,44 @@ if __name__ == "__main__":
 
     # sample in real world
     app = QtWidgets.QApplication(sys.argv)
-    a = LcdDisplayWindow()
-    y_coarse = np.zeros((m_coarse,1))
-    y_fine = np.zeros((m_fine,1))
+    a = LCDControl(app,m_coarse, masks_coarse)
+    y_coarse = a.gety()
+    #b = LCDControl(app,m_coarse, masks_coarse)
+    #y_fine = b.gety()
 
+
+    '''
     a.setimage(masks_coarse[:,:,0].reshape((height_coarse,width_coarse)))
     #cv2.imshow("mask",masks_coarse[:,:,0].reshape((height_coarse,width_coarse)))
     #cv2.waitKey(0)
     
+    # initialize socket
+    socket_tcp = initSensorCommunication()
     for i in range(m_coarse):
         a.setimage(masks_coarse[:,:,i].reshape((height_coarse,width_coarse)))
         time.sleep(1)
-        y_coarse[i,0] = GetSensorData()
+        y_coarse[i,0] = GetSensorData(socket_tcp)
         print("y_coarse ", i, ": ", y_coarse[i,0])
     
     for i in range(m_fine):
         a.setimage(masks_fine[:,:,i].reshape((height_fine,width_fine)))
         time.sleep(1)
-        y_fine[i,0] = GetSensorData()
+        y_fine[i,0] = GetSensorData(socket_tcp)
         print("y_fine ", i, ": ", y_fine[i,0])
-
+    '''
+    np.save("./phi_coarse.npy", phi_coarse)
     np.save("./y_coarse.npy", y_coarse)
-    np.save("./y_fine.npy", y_fine)
+    #np.save("./y_fine.npy", y_fine)
 
     print("Begin reconstruct ROI with high resolution.")
     reimg_roi = cs_reconstruct(y_fine,phi_fine,height_roi,width_roi,cs_rate)
     print("ROI reconstruction finished.")
     print("Begin reconstruct low-resolution image.")
-    reimg_low = cs_reconstruct(y_coarse,phi_coarse,height_coarse,width_coarse,cs_rate)
+    reimg_low = cs_reconstruct(y_coarse*4000,phi_coarse,height_coarse,width_coarse,cs_rate)
     print("low-resolution reconstruction finished.")
     # notice that opencv has an inversed x-y axis
     reimg = cv2.resize(reimg_low, (width_fine,height_fine), interpolation=cv2.INTER_NEAREST)
     reimg[roi_bbox[0]:roi_bbox[2],roi_bbox[1]:roi_bbox[3]] = reimg_roi
-    
     
     np.save('./reimg.npy',reimg)
     

@@ -32,7 +32,7 @@ class LCDControl(QWidget):
         #label.show()
         self.img = maskimg
 
-        #print(self.img[0,0,:])
+        print(self.img[0,0,:])
         self.count = 0
         self.timer = QTimer()
         self.timer.timeout.connect(self.setimg)
@@ -51,11 +51,12 @@ class LCDControl(QWidget):
         app.exit(app.exec())
         #app.closeAllWindows()
 
+    def init
     def setimg(self):
         #print(self.count)
         
         img_np = (self.img[:,:,self.count] > 0.5).astype(np.uint8)*255
-        #print(self.count, " ", img_np[0,0])
+        print(self.count, " ", img_np[0,0])
         img_qt = QtGui.QImage(img_np.copy(), img_np.shape[0], img_np.shape[1], QtGui.QImage.Format_Grayscale8)
         img_qpixmap = QtGui.QPixmap.fromImage(img_qt)
         img_qpixmap = img_qpixmap.scaled(self.label.width(), self.label.height())
@@ -64,7 +65,6 @@ class LCDControl(QWidget):
             pass
         else:
             self.y[self.count-1,0] = GetSensorData(self.socket_tcp)
-            print(self.count-1, " ", self.y[self.count-1,0])
         self.count += 1
         
         if self.count == self.m:
@@ -75,11 +75,15 @@ class LCDControl(QWidget):
 
     def gety(self):
         return self.y
+
+
+    def resety(self):
+        self.y = None
             
 
 
 def initSensorCommunication():
-    SERVER_IP = "172.20.124.23" #树莓派的IP地址
+    SERVER_IP = "172.20.122.220" #树莓派的IP地址
     SERVER_PORT = 8888
     
     print("Starting socket: TCP...")

@@ -156,7 +156,7 @@ def basis_pursuit(A,y):
 
         return g
 
-    solvers.options['maxiters'] = 3
+    solvers.options['maxiters'] = 5
     x = solvers.coneqp(P, q, G, h, kktsolver = Fkkt)['x'][:n]
 
     x = array(x)
